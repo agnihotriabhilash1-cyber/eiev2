@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EIE Video Explorer</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#ffffff;--bg2:#f5f4f0;--bg3:#eeede9;
+  --text:#1a1a18;--text2:#6b6a65;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);
+  --accent:#5046e5;--accent-bg:#eeedfe;--accent-text:#3c3489;
+  --radius:10px;--radius-lg:14px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1c1c1a;--bg2:#252522;--bg3:#2e2e2b;
+    --text:#f0efe9;--text2:#9b9a94;
+    --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
+    --accent:#9f9bf8;--accent-bg:#26215c;--accent-text:#cecbf6;
+  }
+}
+body{font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;background:var(--bg3);color:var(--text);min-height:100vh;}
+.page{max-width:1140px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+h1{font-size:26px;font-weight:600;letter-spacing:-0.5px;margin-bottom:4px;}
+h1 span{color:var(--accent);}
+.subtitle{font-size:14px;color:var(--text2);margin-bottom:2rem;}
+.surface{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem;}
+.row{display:flex;gap:8px;margin-bottom:8px;}
+.row:last-child{margin-bottom:0;}
+input[type=password],input[type=text],select{padding:9px 13px;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:14px;background:var(--bg2);color:var(--text);outline:none;width:100%;}
+input[type=password]:focus,input[type=text]:focus{border-color:var(--accent);}
+select{background:var(--bg);cursor:pointer;}
+.btn{padding:9px 18px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:14px;cursor:pointer;white-space:nowrap;transition:background 0.12s;}
+.btn:hover{background:var(--bg2);}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+.btn-primary:hover{opacity:0.88;}
+.btn-sm{padding:5px 12px;font-size:12px;}
+.help{font-size:12px;color:var(--text2);margin-top:10px;line-height:1.7;}
+.help a{color:var(--accent);}
+/* tabs */
+.tabs{display:flex;gap:4px;margin-bottom:1.5rem;border-bottom:0.5px solid var(--border);}
+.tab{padding:8px 16px;font-size:14px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-0.5px;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+/* controls */
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;}
+.controls input[type=text]{flex:1;min-width:180px;}
+.controls select{width:auto;}
+/* filter row */
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1rem;}
+.filter-row .lbl{font-size:12px;color:var(--text2);white-space:nowrap;}
+.chip{padding:4px 12px;border-radius:20px;border:0.5px solid var(--border2);background:var(--bg);color:var(--text2);font-size:12px;cursor:pointer;transition:all 0.12s;white-space:nowrap;}
+.chip:hover{border-color:var(--accent);color:var(--accent);}
+.chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+/* stats bar */
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.25rem;}
+.stat{background:var(--bg2);border-radius:var(--radius);padding:10px 18px;}
+.stat .lbl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.04em;}
+.stat .val{font-size:20px;font-weight:600;color:var(--text);margin-top:2px;}
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:14px;}
+/* list */
+.list{display:flex;flex-direction:column;gap:8px;}
+.list-item{display:flex;gap:12px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;text-decoration:none;transition:border-color 0.12s;}
+.list-item:hover{border-color:var(--border2);}
+.list-thumb{position:relative;flex-shrink:0;width:160px;aspect-ratio:16/9;background:var(--bg2);overflow:hidden;}
+.list-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.list-body{padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:5px;min-width:0;}
+.list-title{font-size:13px;font-weight:500;color:var(--text);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.list-desc{font-size:12px;color:var(--text2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.list-meta{font-size:12px;color:var(--text2);display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+/* card */
+.vcard{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;text-decoration:none;display:block;transition:border-color 0.15s,transform 0.12s;}
+.vcard:hover{border-color:var(--border2);transform:translateY(-2px);}
+.thumb-wrap{position:relative;aspect-ratio:16/9;overflow:hidden;background:var(--bg2);}
+.thumb-wrap img{width:100%;height:100%;object-fit:cover;display:block;}
+.dur{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.78);color:#fff;font-size:11px;font-weight:500;padding:2px 6px;border-radius:5px;}
+.vbody{padding:10px 13px 13px;}
+.vtitle{font-size:13px;font-weight:500;color:var(--text);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:6px;}
+.vmeta{font-size:12px;color:var(--text2);display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+/* expand panel */
+.expand-panel{display:none;padding:10px 13px;border-top:0.5px solid var(--border);background:var(--bg2);font-size:12px;color:var(--text2);line-height:1.6;}
+.expand-panel.open{display:block;}
+.related-vids{margin-top:8px;}
+.related-vids .lbl{font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text2);margin-bottom:6px;}
+.related-link{display:block;font-size:12px;color:var(--accent);text-decoration:none;padding:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.related-link:hover{text-decoration:underline;}
+/* pills */
+.pill{background:var(--bg2);color:var(--text2);padding:2px 8px;border-radius:20px;font-size:11px;}
+.theme-tag{background:var(--accent-bg);color:var(--accent-text);padding:2px 8px;border-radius:20px;font-size:11px;}
+.speaker-tag{background:#e6f1fb;color:#185fa5;padding:2px 8px;border-radius:20px;font-size:11px;}
+@media(prefers-color-scheme:dark){
+  .speaker-tag{background:#0c447c;color:#b5d4f4;}
+}
+/* status/err */
+.status{text-align:center;font-size:14px;color:var(--text2);padding:2.5rem 0;}
+.theme-status{font-size:12px;color:var(--text2);font-style:italic;padding:4px 0 10px;}
+.err{background:#fcebeb;border:0.5px solid #f09595;border-radius:var(--radius);color:#a32d2d;font-size:13px;padding:10px 14px;margin-bottom:1rem;}
+/* dashboard */
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:1.5rem;}
+.dash-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;}
+.dash-card h3{font-size:14px;font-weight:500;color:var(--text2);margin-bottom:12px;}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.bar-label{font-size:12px;color:var(--text);width:140px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-track{flex:1;height:8px;background:var(--bg2);border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;background:var(--accent);border-radius:4px;transition:width 0.4s;}
+.bar-count{font-size:11px;color:var(--text2);width:30px;text-align:right;flex-shrink:0;}
+.top-video{display:flex;gap:10px;align-items:center;margin-bottom:8px;text-decoration:none;}
+.top-video img{width:80px;aspect-ratio:16/9;object-fit:cover;border-radius:6px;flex-shrink:0;}
+.top-video-info .title{font-size:12px;font-weight:500;color:var(--text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.top-video-info .views{font-size:11px;color:var(--text2);margin-top:3px;}
+.year-chart{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:4px;}
+.year-bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;}
+.year-bar{width:100%;background:var(--accent);border-radius:3px 3px 0 0;transition:height 0.4s;min-height:2px;}
+.year-bar-lbl{font-size:9px;color:var(--text2);margin-top:3px;transform:rotate(-45deg);white-space:nowrap;}
+/* themes hierarchy */
+.cat-block{margin-bottom:1rem;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+.cat-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none;}
+.cat-header:hover{background:var(--bg2);}
+.cat-title{font-size:15px;font-weight:500;color:var(--text);}
+.cat-meta{display:flex;align-items:center;gap:10px;}
+.cat-count{font-size:12px;color:var(--text2);}
+.cat-arrow{font-size:12px;color:var(--text2);transition:transform 0.2s;}
+.cat-arrow.open{transform:rotate(90deg);}
+.cat-body{display:none;padding:0 18px 16px;}
+.cat-body.open{display:block;}
+.tag-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border);cursor:pointer;}
+.tag-row:last-child{border-bottom:none;}
+.tag-row:hover .tag-name{color:var(--accent);}
+.tag-name{font-size:13px;color:var(--text);flex:1;}
+.tag-bar-wrap{width:120px;height:6px;background:var(--bg2);border-radius:3px;overflow:hidden;flex-shrink:0;}
+.tag-bar-fill{height:100%;background:var(--accent);border-radius:3px;}
+.tag-count{font-size:12px;color:var(--text2);width:28px;text-align:right;flex-shrink:0;}
+.tag-arrow{font-size:11px;color:var(--text2);flex-shrink:0;}
+.tag-eps{display:none;padding:10px 0 4px 0;}
+.tag-eps.open{display:block;}
+.ep-row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:0.5px solid var(--border);text-decoration:none;}
+.ep-row:last-child{border-bottom:none;}
+.ep-row:hover .ep-title{color:var(--accent);}
+.ep-thumb{width:80px;aspect-ratio:16/9;object-fit:cover;border-radius:6px;flex-shrink:0;background:var(--bg2);}
+.ep-info{flex:1;min-width:0;}
+.ep-title{font-size:13px;font-weight:500;color:var(--text);line-height:1.4;margin-bottom:3px;}
+.ep-summary{font-size:12px;color:var(--text2);line-height:1.4;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.ep-meta{font-size:11px;color:var(--text2);display:flex;gap:6px;flex-wrap:wrap;}
+/* view toggle */
+.view-toggle{display:flex;gap:4px;}
+.view-btn{padding:6px 10px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text2);font-size:13px;cursor:pointer;}
+.view-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+/* cache banner */
+.cache-banner{background:var(--accent-bg);border:0.5px solid var(--accent);border-radius:var(--radius);color:var(--accent-text);font-size:13px;padding:9px 14px;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+/* graph */
+#graphMount svg{display:block;}
+.g-node{cursor:pointer;}
+.g-node circle{stroke-width:1.5px;transition:r 0.15s;}
+.g-node text{pointer-events:none;font-family:inherit;}
+.g-link{stroke-opacity:0.35;}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>EIE <span>Video Explorer</span></h1>
+  <p class="subtitle">All episodes from Everything is Everything by Amit Varma &amp; Ajay Shah -- search, filter by theme, year and duration &nbsp;·&nbsp; <a href="#" onclick="toggleKeySetup();return false;" style="color:var(--accent);font-size:13px;" id="keyToggleLink">Update API keys</a></p>
+
+  <div class="surface" id="keySetup">
+    <div class="row">
+      <input type="text" id="ytKey" placeholder="YouTube Data API v3 key..." autocomplete="off" spellcheck="false" style="font-family:monospace;"/>
+    </div>
+    <div class="row">
+      <input type="text" id="anthropicKey" placeholder="Anthropic API key (for AI theme + concept detection)..." autocomplete="off" spellcheck="false" style="font-family:monospace;"/>
+      <button class="btn btn-primary" onclick="init()">Load &amp; analyse</button>
+    </div>
+    <p class="help">
+      YouTube key: <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a> -- Enable "YouTube Data API v3" then Credentials &rarr; Create API Key.<br>
+      Anthropic key: <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> -- API Keys &rarr; Create Key. Both keys stay in your browser only.
+    </p>
+  </div>
+
+  <div id="errBox" class="err" style="display:none;"></div>
+  <div id="debugLog" style="display:none;background:#1a1a18;color:#9fe1cb;font-family:monospace;font-size:12px;padding:12px;border-radius:10px;margin-bottom:1rem;max-height:200px;overflow-y:auto;white-space:pre-wrap;"></div>
+  <div id="refreshBar" style="display:none;text-align:right;margin-bottom:0.5rem;">
+    <button class="btn btn-sm" onclick="init()" style="font-size:12px;">Refresh videos</button>
+  </div>
+  <div id="cacheBanner" class="cache-banner" style="display:none;">
+    <span id="cacheMsg"></span>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-sm" onclick="showBinId()">Show Bin ID</button>
+      <button class="btn btn-sm" onclick="clearCache()">Re-analyse</button>
+    </div>
+  </div>
+  <div id="binIdBox" style="display:none;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:10px 14px;margin-bottom:1rem;font-size:13px;word-break:break-all;">
+    <div style="font-weight:500;margin-bottom:4px;color:var(--text);">Your JSONBin Bin ID:</div>
+    <div id="binIdVal" style="font-family:monospace;color:var(--accent);margin-bottom:8px;"></div>
+    <div style="color:var(--text2);font-size:12px;">Hardcode this as <code>JSONBIN_BIN_ID</code> in your file so all devices share the same cache.</div>
+  </div>
+
+  <div id="mainArea" style="display:none;">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('browse')">Browse</button>
+      <button class="tab" onclick="switchTab('themes')">Themes</button>
+      <button class="tab" onclick="switchTab('graph')">Graph</button>
+      <button class="tab" onclick="switchTab('dashboard')">Insights</button>
+    </div>
+
+    <!-- BROWSE TAB -->
+    <div id="tab-browse" class="tab-panel active">
+      <div class="controls">
+        <input type="text" id="searchInput" placeholder="Search titles and descriptions..." oninput="filterVideos()"/>
+        <select id="sortSel" onchange="filterVideos()">
+          <option value="date_desc">Newest first</option>
+          <option value="date_asc">Oldest first</option>
+          <option value="views_desc">Most viewed</option>
+          <option value="title_asc">A to Z</option>
+        </select>
+        <div class="view-toggle">
+          <button class="view-btn active" id="vbGrid" onclick="setView('grid')" title="Grid">&#9783;</button>
+          <button class="view-btn" id="vbList" onclick="setView('list')" title="List">&#9776;</button>
+        </div>
+      </div>
+
+      <div id="themeStatus" class="theme-status" style="display:none;"></div>
+
+
+      <div id="guestFilterRow" class="filter-row" style="display:none;">
+        <span class="lbl">Guest:</span>
+        <div id="guestChips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+      </div>
+
+      <div id="tagFilterRow" class="filter-row" style="display:none;align-items:flex-start;">
+        <span class="lbl" style="margin-top:8px;">Topics:</span>
+        <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
+          <div style="position:relative;width:240px;">
+            <input type="text" id="tagSearch" placeholder="Search topics..." autocomplete="off"
+              oninput="filterTagDropdown()" onfocus="openTagDropdown()" onblur="closeTagDropdownDelayed()"
+              style="width:100%;padding:7px 12px;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:13px;background:var(--bg);color:var(--text);outline:none;"/>
+            <div id="tagDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;width:100%;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius);max-height:220px;overflow-y:auto;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.12);"></div>
+          </div>
+          <div id="tagSelected" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        </div>
+      </div>
+      <div class="filter-row">
+        <span class="lbl">Year:</span>
+        <div id="yearChips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+      </div>
+
+
+      <div class="stats" id="statsBar"></div>
+      <div id="videoContainer"></div>
+    </div>
+
+    <!-- THEMES TAB -->
+    <div id="tab-themes" class="tab-panel">
+      <div id="themesView"></div>
+    </div>
+
+    <!-- GRAPH TAB -->
+    <div id="tab-graph" class="tab-panel">
+      <div id="graphControls" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+        <span style="font-size:13px;color:var(--text2);">Show:</span>
+        <label style="font-size:13px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="gfEpisodes" checked onchange="buildGraph()"> Episodes</label>
+        <label style="font-size:13px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="gfTags" checked onchange="buildGraph()"> Tags</label>
+        <label style="font-size:13px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="gfGuests" checked onchange="buildGraph()"> Guests</label>
+        <label style="font-size:13px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="gfConcepts" onchange="buildGraph()"> Concepts</label>
+        <span style="font-size:12px;color:var(--text2);margin-left:8px;">Min connections: <input type="range" id="gfMinLinks" min="1" max="5" value="2" style="width:80px;vertical-align:middle;" oninput="document.getElementById('gfMinVal').textContent=this.value;buildGraph()"><span id="gfMinVal" style="font-size:12px;margin-left:4px;">2</span></span>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <div id="graphMount" style="flex:1;min-width:0;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;"></div>
+        <div id="graphPanel" style="width:260px;flex-shrink:0;display:none;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px;font-size:13px;"></div>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--text2);">Drag nodes to rearrange &nbsp;·&nbsp; Scroll to zoom &nbsp;·&nbsp; Click a node to explore</div>
+    </div>
+
+    <!-- DASHBOARD TAB -->
+    <div id="tab-dashboard" class="tab-panel">
+      <div class="dash-grid" id="dashGrid"></div>
+    </div>
+  </div>
+
+  <div id="status" class="status"></div>
+</div>
+
+<script>
+const YT = 'https://www.googleapis.com/youtube/v3';
+const CLAUDE = 'https://api.anthropic.com/v1/messages';
+const CACHE_KEY = 'eie_videos_v1';
+
+let ytKey='', anthropicKey='';
+let allVideos=[];
+let activeGuest='All';
+let activeTags=new Set(['All']);
+let activeYear='All', activeDuration='all';
+let currentView='grid';
+
+function showErr(m){const b=document.getElementById('errBox');b.textContent=m;b.style.display='block';}
+function dbg(msg){
+  const el=document.getElementById('debugLog');
+  el.style.display='block';
+  el.textContent += new Date().toISOString().slice(11,19)+' '+msg+'\n';
+  el.scrollTop=el.scrollHeight;
+  console.log('[EIE]',msg);
+}
+function showBinId(){
+  const binId = JSONBIN_BIN_ID || localStorage.getItem('eie_jsonbin_id') || '';
+  const box = document.getElementById('binIdBox');
+  if(!binId){
+    document.getElementById('binIdVal').textContent = 'No Bin ID found yet — run AI analysis first.';
+  } else {
+    document.getElementById('binIdVal').textContent = binId;
+  }
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleKeySetup(){
+  const el=document.getElementById('keySetup');
+  const hidden=el.style.display==='none';
+  el.style.display=hidden?'block':'none';
+  document.getElementById('keyToggleLink').textContent=hidden?'Hide key setup':'Update API keys';
+}
+function clearErr(){document.getElementById('errBox').style.display='none';}
+function setStatus(m){document.getElementById('status').textContent=m;}
+function setThemeStatus(m){const el=document.getElementById('themeStatus');if(m){el.textContent=m;el.style.display='block';}else el.style.display='none';}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['browse','themes','graph','dashboard'][i]===t));
+  document.querySelectorAll('.tab-panel').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  if(t==='dashboard') renderDashboard();
+  if(t==='themes') renderThemesView();
+  if(t==='graph') buildGraph();
+}
+
+function setView(v){
+  currentView=v;
+  document.getElementById('vbGrid').classList.toggle('active',v==='grid');
+  document.getElementById('vbList').classList.toggle('active',v==='list');
+  filterVideos();
+}
+
+// -- Hardcoded keys (fill these in before deploying) --------------------------
+const HARDCODED_YT_KEY = '';        // paste your YouTube Data API v3 key here
+const HARDCODED_ANTHROPIC_KEY = ''; // paste your Anthropic API key here
+const JSONBIN_SECRET = '';          // paste your JSONBin secret key here ($2b$...)
+const JSONBIN_BIN_ID = '';          // leave blank -- auto-created on first run
+// -----------------------------------------------------------------------------
+
+function loadSavedKeys(){
+  const yk = HARDCODED_YT_KEY || localStorage.getItem('eie_yt_key') || '';
+  const ak = HARDCODED_ANTHROPIC_KEY || localStorage.getItem('eie_anthropic_key') || '';
+  if(yk) document.getElementById('ytKey').value = yk;
+  if(ak) document.getElementById('anthropicKey').value = ak;
+  return yk;
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const yk = loadSavedKeys();
+  if(yk){
+    document.getElementById('keySetup').style.display = 'none';
+    init();
+  }
+  // If no saved keys, keySetup stays visible so user can enter them
+});
+
+async function init(){
+  try{
+  // Read from input fields first, fall back to hardcoded constants and localStorage
+  const inputYt = (document.getElementById('ytKey').value||'').trim();
+  const inputAk = (document.getElementById('anthropicKey').value||'').trim();
+  ytKey = inputYt || HARDCODED_YT_KEY || localStorage.getItem('eie_yt_key') || '';
+  anthropicKey = inputAk || HARDCODED_ANTHROPIC_KEY || localStorage.getItem('eie_anthropic_key') || '';
+  if(!ytKey){showErr('Please enter a YouTube Data API v3 key.');return;}
+  // Save to localStorage so they persist across sessions
+  if(ytKey) localStorage.setItem('eie_yt_key', ytKey);
+  if(anthropicKey) localStorage.setItem('eie_anthropic_key', anthropicKey);
+  // Hide key setup now that we have keys
+  document.getElementById('keySetup').style.display='none';
+  clearErr();
+  document.getElementById('cacheBanner').style.display='none';
+  document.getElementById('refreshBar').style.display='none';
+  allVideos=[];
+  document.getElementById('mainArea').style.display='none';
+  dbg('init started');
+  dbg('YT key: '+(ytKey?ytKey.slice(0,12)+'...':'MISSING'));
+  dbg('Anthropic key: '+(anthropicKey?anthropicKey.slice(0,12)+'...':'none'));
+  setStatus('Fetching videos...');
+  console.log('Using YT key:', ytKey.slice(0,8)+'...', 'Anthropic key:', anthropicKey ? anthropicKey.slice(0,8)+'...' : 'none');
+  await fetchAllPages();
+  dbg('fetchAllPages done, videos: '+allVideos.length);
+  if(!allVideos.length){dbg('ERROR: no videos fetched');return;}
+  await loadCachedMetadata();
+  // Show UI immediately after fetch so videos are visible
+  document.getElementById('mainArea').style.display='block';
+  document.getElementById('refreshBar').style.display='block';
+  setStatus('');
+  buildYearChips();
+  renderGuestChips();
+  renderConceptChips();
+  filterVideos();
+  // Then run AI in background if needed
+  const needsAI=allVideos.some(v=>!v.category||!v.tags||!v.tags.length);
+  const allCached=allVideos.every(v=>v.category&&v.tags&&v.tags.length);
+  if(allCached){
+    showCacheBanner();
+    renderThemesView();
+    renderDashboard();
+    buildGraph();
+    buildGraph();
+  } else if(needsAI && anthropicKey){
+    await detectAIMetadata();
+  }
+  }catch(e){dbg('EXCEPTION in init: '+e.message);showErr('Error: '+e.message);setStatus('');console.error(e);}
+}
+
+async function loadCachedMetadata(){
+  // Try cloud cache first (JSONBin), fall back to localStorage
+  const binId = JSONBIN_BIN_ID || localStorage.getItem('eie_jsonbin_id');
+  const secret = JSONBIN_SECRET || localStorage.getItem('eie_jsonbin_secret');
+  if(binId && secret){
+    try{
+      setStatus('Loading cache from cloud...');
+      const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+        headers: {'X-Master-Key': secret}
+      });
+      const data = await res.json();
+      const cache = data.record || {};
+      let hits = 0;
+      allVideos.forEach(v=>{
+        if(cache[v.id]){const c=cache[v.id];v.category=c.category||null;v.tags=c.tags||[];v.guest=c.guest||null;v.concepts=c.concepts||[];v.summary=c.summary||null;hits++;}
+      });
+      // Also save to localStorage as offline fallback
+      localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+      if(hits) setThemeStatus(`Loaded ${hits} cached classifications from cloud.`);
+      return;
+    }catch(e){ console.warn('Cloud cache load failed, falling back to localStorage', e); }
+  }
+  // localStorage fallback
+  try{
+    const raw=localStorage.getItem(CACHE_KEY);
+    if(!raw) return;
+    const cache=JSON.parse(raw);
+    allVideos.forEach(v=>{
+      if(cache[v.id]){const c=cache[v.id];v.category=c.category||null;v.tags=c.tags||[];v.guest=c.guest||null;v.concepts=c.concepts||[];v.summary=c.summary||null;}
+    });
+  }catch(e){}
+}
+
+async function saveCache(){
+  // Build cache object
+  const cache={};
+  allVideos.forEach(v=>{if(v.category||v.tags.length) cache[v.id]={category:v.category||null,tags:v.tags||[],guest:v.guest||null,concepts:v.concepts||[],summary:v.summary||null};});
+  // Always save to localStorage
+  try{ localStorage.setItem(CACHE_KEY,JSON.stringify(cache)); }catch(e){}
+  // Save to JSONBin if configured
+  const secret = JSONBIN_SECRET || localStorage.getItem('eie_jsonbin_secret');
+  if(!secret) return;
+  let binId = JSONBIN_BIN_ID || localStorage.getItem('eie_jsonbin_id');
+  try{
+    if(!binId){
+      // Create a new bin
+      const res = await fetch('https://api.jsonbin.io/v3/b', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-Master-Key':secret,'X-Bin-Name':'eie-cache','X-Bin-Private':'true'},
+        body: JSON.stringify(cache)
+      });
+      const data = await res.json();
+      binId = data.metadata?.id;
+      if(binId){
+        localStorage.setItem('eie_jsonbin_id', binId);
+        console.log('Created JSONBin:', binId);
+      }
+    } else {
+      // Update existing bin
+      await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json','X-Master-Key':secret},
+        body: JSON.stringify(cache)
+      });
+    }
+  }catch(e){ console.warn('Cloud cache save failed:', e); }
+}
+
+function showCacheBanner(){
+  const cached=allVideos.filter(v=>v.category&&v.tags&&v.tags.length).length;
+  document.getElementById('cacheMsg').textContent=`Loaded AI labels from cloud cache (${cached} videos). Click Re-analyse to refresh.`;
+  document.getElementById('cacheBanner').style.display='flex';
+}
+
+function clearCache(){
+  localStorage.removeItem(CACHE_KEY);
+  localStorage.removeItem('eie_jsonbin_id');
+  allVideos.forEach(v=>{v.category=null;v.tags=[];v.guest=null;v.concepts=[];v.summary=null;});
+  document.getElementById('cacheBanner').style.display='none';
+  if(anthropicKey) detectAIMetadata();
+}
+
+async function fetchAllPages(){
+  try{
+    dbg('fetching channel ID from known video...');
+    const knownVideoId = 'GG9jDXRaXOo';
+    const vidRes = await fetch(YT + '/videos?part=snippet&id=' + knownVideoId + '&key=' + ytKey);
+    const vidData = await vidRes.json();
+    if(vidData.error){ showErr('YouTube API error: ' + vidData.error.message); return; }
+    const channelId = vidData.items && vidData.items[0] && vidData.items[0].snippet.channelId;
+    dbg('channelId: '+(channelId||'NOT FOUND'));
+    if(!channelId){ showErr('Could not resolve EIE channel ID.'); return; }
+    const chRes = await fetch(YT + '/channels?part=contentDetails&id=' + channelId + '&key=' + ytKey);
+    const chData = await chRes.json();
+    if(chData.error){ showErr('YouTube API error: ' + chData.error.message); return; }
+    const uploadsId = chData.items && chData.items[0] && chData.items[0].contentDetails.relatedPlaylists.uploads;
+    dbg('uploadsId: '+(uploadsId||'NOT FOUND'));
+    if(!uploadsId){ showErr('Could not find uploads playlist.'); return; }
+    let pageToken = null;
+    do{
+      dbg('fetching playlist page, videos so far: '+allVideos.length);
+      setStatus('Fetching videos... (' + allVideos.length + ' loaded)');
+      let url = YT + '/playlistItems?part=contentDetails&playlistId=' + uploadsId + '&maxResults=50&key=' + ytKey;
+      if(pageToken) url += '&pageToken=' + pageToken;
+      const plRes = await fetch(url);
+      const plData = await plRes.json();
+      if(plData.error){ showErr('YouTube API error: ' + plData.error.message); break; }
+      const ids = (plData.items||[]).map(i => i.contentDetails.videoId).join(',');
+      pageToken = plData.nextPageToken || null;
+      if(!ids) break;
+      const detRes = await fetch(YT + '/videos?part=snippet,statistics,contentDetails&id=' + ids + '&key=' + ytKey);
+      const detData = await detRes.json();
+      (detData.items||[]).forEach(v => {
+        allVideos.push({
+          id: v.id, title: v.snippet.title, desc: v.snippet.description,
+          thumb: ((v.snippet.thumbnails.medium || v.snippet.thumbnails.default) || {}).url || '',
+          published: v.snippet.publishedAt,
+          views: parseInt(v.statistics.viewCount||'0'),
+          likes: parseInt(v.statistics.likeCount||'0'),
+          durationSec: isoToSec(v.contentDetails.duration),
+          duration: parseDuration(v.contentDetails.duration),
+          category: null, tags: [], guest: null, concepts: [], summary: null
+        });
+      });
+    }while(pageToken);
+  }catch(e){ dbg('EXCEPTION in fetchAllPages: '+e.message); showErr('Fetch error: ' + e.message); console.error(e); }
+}
